@@ -1,0 +1,17 @@
+{
+  "name": "kop-dbus-nodejs-example",
+  "version": "1.0.0",
+  "description": "Node.js example using local DBus system daemon with KopzinskiInterface",
+  "main": "service.js",
+  "scripts": {
+    "start-service": "node service.js",
+    "test-client": "node client.js",
+    "test": "npm run start-service & sleep 2 && npm run test-client"
+  },
+  "keywords": ["dbus", "nodejs", "ipc", "system"],
+  "author": "Kopzinski",
+  "license": "MIT",
+  "dependencies": {
+    "dbus-next": "^0.10.2"
+  }
+}
