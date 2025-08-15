@@ -1,16 +1,24 @@
-# DBus System Daemon Scripts
+# DBus Development Tools
 
-A collection of shell scripts to manage a local DBus system daemon for development purposes on Linux.
+A collection of shell scripts and examples to manage a local DBus system daemon for development purposes on Linux and macOS.
 
 ## Overview
 
-These scripts provide an easy way to start, stop, and test a local DBus system daemon that runs independently from the system's main DBus service. This is useful for development and testing scenarios where you need isolated DBus communication.
+These tools provide an easy way to start, stop, and test a local DBus system daemon that runs independently from the system's main DBus service. This is useful for development and testing scenarios where you need isolated DBus communication.
+
+The project includes:
+- **Shell scripts** for DBus daemon management
+- **Node.js examples** demonstrating custom DBus interface implementation
+- **Setup automation** for easy environment configuration
 
 ## Prerequisites
 
-- Linux operating system
-- `dbus-daemon` command available (install with `sudo pacman -S dbus` on Arch or `sudo apt install dbus` on Ubuntu/Debian)
+- Linux or macOS operating system
+- `dbus-daemon` command available:
+  - **Linux:** `sudo apt install dbus` (Ubuntu/Debian) or `sudo pacman -S dbus` (Arch)
+  - **macOS:** `brew install dbus`
 - Bash shell
+- **For Node.js examples:** Node.js 14+ and npm
 - Optional: `socat` for enhanced connectivity testing
 
 ## Scripts
@@ -91,29 +99,98 @@ Comprehensive testing and status checking of the local DBus daemon.
 
 ## Quick Start
 
-1. **Start the daemon:**
+### Setup Environment
+1. **Run initial setup:**
+   ```bash
+   ./setup.sh
+   ```
+   This will:
+   - Check for dbus-daemon installation
+   - Generate configuration file with your username
+   - Create necessary directories
+   - Make scripts executable
+
+2. **Start the daemon:**
    ```bash
    ./start-dbus.sh
    ```
 
-2. **Configure your environment:**
+3. **Configure your environment:**
    ```bash
    export DBUS_SYSTEM_BUS_ADDRESS="unix:path=/tmp/dbus-system-local/system_bus_socket"
    ```
 
-3. **Test the setup:**
+4. **Test the setup:**
    ```bash
    ./test-dbus.sh
    ```
 
-4. **When finished, stop the daemon:**
+5. **When finished, stop the daemon:**
    ```bash
    ./stop-dbus.sh
    ```
 
+### Try Node.js Examples
+After setting up the DBus daemon:
+
+1. **Navigate to Node.js examples:**
+   ```bash
+   cd nodejs
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Run the complete test:**
+   ```bash
+   npm test
+   ```
+
+This will start the KopzinskiInterface service and run a comprehensive test client that demonstrates all available methods, properties, and signals.
+
+## Project Structure
+
+```
+.
+├── README.md                           # This file
+├── setup.sh                          # Initial setup script
+├── start-dbus.sh                      # Start DBus daemon
+├── stop-dbus.sh                       # Stop DBus daemon  
+├── test-dbus.sh                       # Test and status check
+├── dbus-system-local.template.conf    # Configuration template
+├── dbus-system-local.conf             # Generated configuration (ignored by git)
+└── nodejs/                            # Node.js examples
+    ├── README.md                      # Node.js specific documentation
+    ├── package.json                   # npm configuration
+    ├── service.js                     # KopzinskiInterface DBus service
+    └── client.js                      # Test client
+
+```
+
+## Node.js Examples
+
+The `nodejs/` directory contains a complete example of implementing a custom DBus interface using Node.js. The `KopzinskiInterface` demonstrates:
+
+### Features
+- **Methods:** GetStatus, SetMessage, GetMessage, IncrementCounter, GetCounter, ResetCounter
+- **Properties:** Version (read-only)
+- **Signals:** MessageChanged, CounterChanged
+- **Service Discovery:** Automatic registration with the local DBus daemon
+- **Error Handling:** Comprehensive error handling and user feedback
+
+### Use Cases
+- **IPC Development:** Learn how to implement inter-process communication using DBus
+- **Service Architecture:** Understand DBus service/client patterns
+- **Signal Handling:** See how to emit and listen to DBus signals
+- **Property Management:** Explore DBus property access patterns
+
+See `nodejs/README.md` for detailed usage instructions and API documentation.
+
 ## Configuration
 
-The scripts expect a configuration file named `dbus-system-local.conf` in the same directory. This file should contain the DBus daemon configuration for your local setup.
+The setup script automatically generates `dbus-system-local.conf` from the template file `dbus-system-local.template.conf`, replacing the username placeholder with your current user.
 
 ## Environment Variables
 
