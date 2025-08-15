@@ -304,41 +304,59 @@ step_4_start_daemon() {
 
 step_5_environment() {
     show_header
-    show_step 5 "Set Environment Variable" \
-        "To use the local DBus daemon, you need to set the DBUS_SYSTEM_BUS_ADDRESS environment variable.\n\nThis tells applications to use our local daemon instead of the system one." \
-        "export DBUS_SYSTEM_BUS_ADDRESS=\"unix:path=/tmp/dbus-system-local/system_bus_socket\"" "false"
     
-    get_user_choice "Set environment variable?" "y"
-    case $? in
-        0) # Execute
-            if execute_command 'export DBUS_SYSTEM_BUS_ADDRESS="unix:path=/tmp/dbus-system-local/system_bus_socket"' \
-                "Environment variable set for this session" \
-                "Failed to set environment variable"; then
+    # Check if environment variable is already set
+    if [[ -n "$DBUS_SYSTEM_BUS_ADDRESS" ]] && [[ "$DBUS_SYSTEM_BUS_ADDRESS" == *"/tmp/dbus-system-local"* ]]; then
+        show_step 5 "Environment Variable Status" \
+            "✅ Great! The DBUS_SYSTEM_BUS_ADDRESS environment variable is already set in this session.\n\nThe setup script automatically added it to your shell profile, so new terminal sessions will have it too.\n\nCurrent value: $DBUS_SYSTEM_BUS_ADDRESS" \
+            "" "false"
+        
+        get_user_choice "Continue to testing?" "y"
+        case $? in
+            0|1|2) # Execute, Show, or Skip
+                CURRENT_STEP=6
+                ;;
+            3) # Back
+                CURRENT_STEP=4
+                ;;
+        esac
+    else
+        show_step 5 "Set Environment Variable" \
+            "The setup script should have added the DBUS_SYSTEM_BUS_ADDRESS to your shell profile, but it's not set in this session.\n\nLet's set it manually for this terminal. New terminal sessions should have it automatically." \
+            "export DBUS_SYSTEM_BUS_ADDRESS=\"unix:path=/tmp/dbus-system-local/system_bus_socket\"" "false"
+        
+        get_user_choice "Set environment variable for this session?" "y"
+        case $? in
+            0) # Execute
+                if execute_command 'export DBUS_SYSTEM_BUS_ADDRESS="unix:path=/tmp/dbus-system-local/system_bus_socket"' \
+                    "Environment variable set for this session" \
+                    "Failed to set environment variable"; then
+                    echo ""
+                    echo -e "${YELLOW}Note: The setup script added this to your shell profile for future sessions.${NC}"
+                    echo -e "${YELLOW}If you open new terminals, they should have it automatically.${NC}"
+                    wait_continue
+                    CURRENT_STEP=6
+                else
+                    wait_continue
+                    CURRENT_STEP=6
+                fi
+                ;;
+            1) # Show only
+                echo -e "${CYAN}${ARROW} Run this command in your terminal:${NC}"
                 echo ""
-                echo -e "${YELLOW}Note: This sets the variable only for this terminal session.${NC}"
-                echo -e "${YELLOW}For other terminals, you'll need to run the export command again.${NC}"
+                echo -e "${YELLOW}Note: The setup script should have added this to your shell profile,${NC}"
+                echo -e "${YELLOW}so new terminal sessions will have it automatically.${NC}"
                 wait_continue
                 CURRENT_STEP=6
-            else
-                wait_continue
+                ;;
+            2) # Skip
                 CURRENT_STEP=6
-            fi
-            ;;
-        1) # Show only
-            echo -e "${CYAN}${ARROW} Run this command in your terminal (and any other terminals you'll use):${NC}"
-            echo ""
-            echo -e "${YELLOW}Note: You'll need to run this export command in each terminal session${NC}"
-            echo -e "${YELLOW}where you want to use the local DBus daemon.${NC}"
-            wait_continue
-            CURRENT_STEP=6
-            ;;
-        2) # Skip
-            CURRENT_STEP=6
-            ;;
-        3) # Back
-            CURRENT_STEP=4
-            ;;
-    esac
+                ;;
+            3) # Back
+                CURRENT_STEP=4
+                ;;
+        esac
+    fi
 }
 
 step_6_test_daemon() {
@@ -492,10 +510,13 @@ step_8_completion() {
             echo -e "${CYAN}1. Stop the DBus daemon:${NC}"
             echo "   ./stop-dbus.sh"
             echo ""
-            echo -e "${CYAN}2. Unset environment variable (optional):${NC}"
-            echo "   unset DBUS_SYSTEM_BUS_ADDRESS"
+            echo -e "${CYAN}2. (Optional) Clean up completely:${NC}"
+            echo "   ./clear-setup.sh    # Removes config, profile entries, and directories"
             echo ""
-            echo -e "${GREEN}The daemon and all temporary files will be cleaned up automatically.${NC}"
+            echo -e "${YELLOW}Note: The environment variable was added to your shell profile by setup.sh${NC}"
+            echo -e "${YELLOW}Use clear-setup.sh to remove it completely, or it will persist in new sessions.${NC}"
+            echo ""
+            echo -e "${GREEN}The daemon and temporary files will be cleaned up automatically by stop-dbus.sh${NC}"
             echo ""
             local distro=$(detect_distro)
             if [[ "$distro" == "arch" ]]; then

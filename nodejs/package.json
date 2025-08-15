@@ -6,7 +6,7 @@
   "scripts": {
     "start-service": "node service.js",
     "test-client": "node client.js",
-    "test": "npm run start-service & sleep 2 && npm run test-client"
+    "test": "npm run start-service & SERVICE_PID=$! && sleep 2 && npm run test-client; kill $SERVICE_PID 2>/dev/null || true"
   },
   "keywords": ["dbus", "nodejs", "ipc", "system"],
   "author": "Kopzinski",

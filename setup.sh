@@ -147,6 +147,65 @@ echo "🔧 Making scripts executable..."
 chmod +x "$SCRIPT_DIR"/*.sh
 echo "✅ Scripts are now executable"
 
+# Setup environment variable in shell profile
+echo "🔧 Setting up environment variable in shell profile..."
+DBUS_ENV_VAR="export DBUS_SYSTEM_BUS_ADDRESS=\"unix:path=$SOCKET_DIR/system_bus_socket\""
+COMMENT_LINE="# DBus development environment (added by kop-dbus-tools setup)"
+
+# Detect shell and appropriate profile file
+SHELL_TYPE="$(basename "$SHELL")"
+PROFILE_FILES=()
+
+case "$SHELL_TYPE" in
+    bash)
+        [[ -f "$HOME/.bashrc" ]] && PROFILE_FILES+=("$HOME/.bashrc")
+        [[ -f "$HOME/.bash_profile" ]] && PROFILE_FILES+=("$HOME/.bash_profile")
+        [[ ${#PROFILE_FILES[@]} -eq 0 ]] && PROFILE_FILES=("$HOME/.bashrc")
+        ;;
+    zsh)
+        [[ -f "$HOME/.zshrc" ]] && PROFILE_FILES+=("$HOME/.zshrc")
+        [[ ${#PROFILE_FILES[@]} -eq 0 ]] && PROFILE_FILES=("$HOME/.zshrc")
+        ;;
+    *)
+        echo "⚠️  Unknown shell: $SHELL_TYPE, defaulting to .bashrc"
+        PROFILE_FILES=("$HOME/.bashrc")
+        ;;
+esac
+
+# Add environment variable to profile files
+PROFILE_UPDATED=false
+for PROFILE_FILE in "${PROFILE_FILES[@]}"; do
+    if [[ -f "$PROFILE_FILE" ]] && grep -q "DBUS_SYSTEM_BUS_ADDRESS.*$SOCKET_DIR" "$PROFILE_FILE"; then
+        echo "ℹ️  Environment variable already exists in $PROFILE_FILE"
+    else
+        echo "📝 Adding environment variable to $PROFILE_FILE"
+        echo "" >> "$PROFILE_FILE"
+        echo "$COMMENT_LINE" >> "$PROFILE_FILE"
+        echo "$DBUS_ENV_VAR" >> "$PROFILE_FILE"
+        echo "✅ Environment variable added to $PROFILE_FILE"
+        PROFILE_UPDATED=true
+    fi
+done
+
+# Source the profile to apply changes immediately
+if [[ "$PROFILE_UPDATED" == "true" ]]; then
+    echo "🔄 Applying changes to current session..."
+    # Try to source the most appropriate profile file
+    if [[ "$SHELL_TYPE" == "zsh" && -f "$HOME/.zshrc" ]]; then
+        source "$HOME/.zshrc" 2>/dev/null || echo "⚠️  Could not source .zshrc automatically"
+    elif [[ "$SHELL_TYPE" == "bash" ]]; then
+        if [[ -f "$HOME/.bashrc" ]]; then
+            source "$HOME/.bashrc" 2>/dev/null || echo "⚠️  Could not source .bashrc automatically"
+        elif [[ -f "$HOME/.bash_profile" ]]; then
+            source "$HOME/.bash_profile" 2>/dev/null || echo "⚠️  Could not source .bash_profile automatically"
+        fi
+    fi
+    
+    # Set the variable for this session regardless
+    export DBUS_SYSTEM_BUS_ADDRESS="unix:path=$SOCKET_DIR/system_bus_socket"
+    echo "✅ Environment variable is now active in this session"
+fi
+
 # Final check
 echo ""
 echo "🎉 Setup complete!"
@@ -156,6 +215,11 @@ echo "   1. Start daemon:    ./start-dbus.sh"
 echo "   2. Test connection: ./test-dbus.sh"
 echo "   3. Stop daemon:     ./stop-dbus.sh"
 echo ""
-echo "💡 Environment variable for applications:"
-echo "   export DBUS_SYSTEM_BUS_ADDRESS=\"unix:path=$SOCKET_DIR/system_bus_socket\""
+if [[ "$PROFILE_UPDATED" == "true" ]]; then
+    echo "💡 Environment variable has been added to your shell profile and is active in this session."
+else
+    echo "💡 Environment variable was already configured in your shell profile."
+    # Still export it for this session in case it's not already set
+    export DBUS_SYSTEM_BUS_ADDRESS="unix:path=$SOCKET_DIR/system_bus_socket"
+fi
 echo ""
