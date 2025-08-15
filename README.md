@@ -15,10 +15,13 @@ The project includes:
 
 - Linux or macOS operating system
 - `dbus-daemon` command available:
-  - **Linux:** `sudo apt install dbus` (Ubuntu/Debian) or `sudo pacman -S dbus` (Arch)
+  - **Linux (Ubuntu/Debian):** `sudo apt install dbus`
+  - **Linux (Arch):** `sudo pacman -S dbus dbus-glib` (dbus-broker also supported)
+  - **Linux (Fedora):** `sudo dnf install dbus`
   - **macOS:** `brew install dbus`
 - Bash shell
 - **For Node.js examples:** Node.js 14+ and npm
+- **Arch Linux users:** May need to be in `dbus` group (`sudo usermod -a -G dbus $USER`)
 - Optional: `socat` for enhanced connectivity testing
 
 ## Scripts
@@ -149,6 +152,33 @@ After setting up the DBus daemon:
    ```
 
 This will start the KopzinskiInterface service and run a comprehensive test client that demonstrates all available methods, properties, and signals.
+
+## Arch Linux Specific Notes
+
+The tools have been optimized for Arch Linux with the following considerations:
+
+### DBus Implementation
+- **dbus-broker:** Arch uses dbus-broker by default (systemd integration)
+- **dbus-daemon:** Also supported and recommended for development
+- Both are automatically detected by the setup script
+
+### Setup Requirements
+1. **Install DBus:** `sudo pacman -S dbus dbus-glib`
+2. **Enable service:** `sudo systemctl enable --now dbus`
+3. **User groups:** `sudo usermod -a -G dbus $USER`
+4. **Session restart:** Log out and back in after group changes
+
+### Node.js Installation
+- **Official repos:** `sudo pacman -S nodejs npm`
+- **NVM (recommended):** `yay -S nvm` or direct install from nvm.sh
+- **Version management:** Use nvm for multiple Node.js versions
+
+### Troubleshooting
+- **Permission issues:** Ensure you're in the `dbus` group
+- **Service conflicts:** Check `systemctl status dbus-broker` vs `systemctl status dbus`
+- **Socket permissions:** Verify `/tmp/dbus-system-local/` accessibility
+
+The interactive guide (`./guide.sh`) provides Arch-specific instructions and troubleshooting tips.
 
 ## Project Structure
 

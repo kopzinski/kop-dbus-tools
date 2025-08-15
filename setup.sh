@@ -19,9 +19,20 @@ case "$OS_TYPE" in
     Linux*)
         PLATFORM="Linux"
         PACKAGE_MANAGERS=("apt-get" "yum" "dnf" "pacman" "zypper")
+        # Detect specific Linux distribution
+        if [[ -f /etc/arch-release ]]; then
+            DISTRO="Arch"
+        elif [[ -f /etc/debian_version ]]; then
+            DISTRO="Debian/Ubuntu"
+        elif [[ -f /etc/redhat-release ]]; then
+            DISTRO="RedHat/CentOS"
+        else
+            DISTRO="Unknown"
+        fi
         ;;
     Darwin*)
         PLATFORM="macOS"
+        DISTRO="macOS"
         PACKAGE_MANAGERS=("brew")
         ;;
     *)
@@ -30,35 +41,73 @@ case "$OS_TYPE" in
         ;;
 esac
 
-echo "🖥️  Platform detected: $PLATFORM"
+echo "🖥️  Platform detected: $PLATFORM ($DISTRO)"
 
-# Check if dbus-daemon is installed
-echo "🔍 Checking for dbus-daemon..."
+# Check if DBus is installed (daemon or broker)
+echo "🔍 Checking for DBus installation..."
+DBUS_FOUND=false
+DBUS_TYPE=""
+
 if command -v dbus-daemon >/dev/null 2>&1; then
     DBUS_VERSION=$(dbus-daemon --version | head -n1)
-    echo "✅ Found: $DBUS_VERSION"
-else
-    echo "❌ dbus-daemon not found!"
+    echo "✅ Found dbus-daemon: $DBUS_VERSION"
+    DBUS_FOUND=true
+    DBUS_TYPE="daemon"
+elif command -v dbus-broker >/dev/null 2>&1 && [[ "$DISTRO" == "Arch" ]]; then
+    echo "✅ Found dbus-broker (Arch default)"
+    echo "⚠️  Note: dbus-daemon is recommended for this development setup"
+    DBUS_FOUND=true
+    DBUS_TYPE="broker"
+fi
+
+if [[ "$DBUS_FOUND" == "false" ]]; then
+    echo "❌ DBus not found!"
     echo ""
     echo "📦 Installation instructions:"
     
-    case "$PLATFORM" in
-        Linux)
-            echo "   Ubuntu/Debian: sudo apt-get install dbus"
-            echo "   CentOS/RHEL:   sudo yum install dbus"
-            echo "   Fedora:        sudo dnf install dbus"
-            echo "   Arch:          sudo pacman -S dbus"
-            echo "   openSUSE:      sudo zypper install dbus-1"
+    case "$DISTRO" in
+        "Arch")
+            echo "   Arch Linux:    sudo pacman -S dbus dbus-glib"
+            echo "   Alternative:   yay -S dbus-broker (AUR)"
+            echo ""
+            echo "📋 After installation on Arch:"
+            echo "   • Enable dbus: sudo systemctl enable --now dbus"
+            echo "   • Add to group: sudo usermod -a -G dbus \$USER"
+            echo "   • Log out and back in"
             ;;
-        macOS)
-            echo "   Homebrew:      brew install dbus"
-            echo "   MacPorts:      sudo port install dbus"
+        "Debian/Ubuntu")
+            echo "   Ubuntu/Debian: sudo apt-get install dbus"
+            ;;
+        *)
+            case "$PLATFORM" in
+                Linux)
+                    echo "   CentOS/RHEL:   sudo yum install dbus"
+                    echo "   Fedora:        sudo dnf install dbus"
+                    echo "   openSUSE:      sudo zypper install dbus-1"
+                    ;;
+                macOS)
+                    echo "   Homebrew:      brew install dbus"
+                    echo "   MacPorts:      sudo port install dbus"
+                    ;;
+            esac
             ;;
     esac
     
     echo ""
-    echo "⚠️  Please install dbus-daemon and run this setup again."
+    echo "⚠️  Please install DBus and run this setup again."
     exit 1
+fi
+
+# Check user groups on Arch
+if [[ "$DISTRO" == "Arch" ]]; then
+    echo "🔍 Checking user groups (Arch Linux)..."
+    if ! groups | grep -q "\bdbus\b"; then
+        echo "⚠️  You're not in the 'dbus' group"
+        echo "💡 Recommendation: sudo usermod -a -G dbus $USER"
+        echo "   Then log out and back in for the change to take effect."
+    else
+        echo "✅ User is in 'dbus' group"
+    fi
 fi
 
 # Get current user
