@@ -6,13 +6,66 @@
 
 set -e
 
+# Default watch interval in seconds
+WATCH_INTERVAL=3
+WATCH_MODE=false
+
+# Function to show usage
+show_usage() {
+    echo "Usage: $0 [OPTIONS]"
+    echo ""
+    echo "Options:"
+    echo "  -w, --watch [INTERVAL]    Watch mode - continuously monitor DBus status"
+    echo "                           INTERVAL: seconds between checks (default: 3)"
+    echo "  -h, --help               Show this help message"
+    echo ""
+    echo "Examples:"
+    echo "  $0                       Run single test"
+    echo "  $0 --watch               Watch with 3s interval"
+    echo "  $0 --watch 5             Watch with 5s interval"
+}
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -w|--watch)
+            WATCH_MODE=true
+            if [[ $2 =~ ^[0-9]+$ ]]; then
+                WATCH_INTERVAL=$2
+                shift
+            fi
+            shift
+            ;;
+        -h|--help)
+            show_usage
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            show_usage
+            exit 1
+            ;;
+    esac
+done
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOCKET_DIR="/tmp/dbus-system-local"
 SOCKET_PATH="$SOCKET_DIR/system_bus_socket"
 PID_FILE="$SOCKET_DIR/dbus.pid"
 
-echo "🔍 Testing local DBus system daemon status..."
-echo ""
+# Function to run the actual DBus test
+run_dbus_test() {
+    local iteration_count="$1"
+
+    if [[ "$WATCH_MODE" == "true" ]]; then
+        clear
+        echo "🔍 DBus Status Monitor (Watching every ${WATCH_INTERVAL}s) - Check #${iteration_count}"
+        echo "Press Ctrl+C to stop"
+        echo ""
+    else
+        echo "🔍 Testing local DBus system daemon status..."
+        echo ""
+    fi
 
 # ============================================================================
 # 1. Process Verification
@@ -209,5 +262,20 @@ elif [[ "$SOCKET_OK" == "❌" ]]; then
     echo "🔄 To restart DBus:"
     echo "   ./stop-dbus.sh && ./start-dbus.sh"
 fi
+}
 
-echo ""
+# Main execution logic
+if [[ "$WATCH_MODE" == "true" ]]; then
+    iteration=1
+    trap 'echo ""; echo "👋 Watch mode stopped"; exit 0' INT
+
+    while true; do
+        run_dbus_test "$iteration"
+        echo ""
+        echo "⏱️  Next check in ${WATCH_INTERVAL}s... (Ctrl+C to stop)"
+        sleep "$WATCH_INTERVAL"
+        ((iteration++))
+    done
+else
+    run_dbus_test "1"
+fi

@@ -2,6 +2,20 @@
 
 A collection of shell scripts and examples to manage a local DBus system daemon for development purposes on Linux and macOS.
 
+## TLDR
+
+This toolkit provides a local DBus daemon for development, essential for Node.js applications using the `dbus-next` library. The library requires the `DBUS_SYSTEM_BUS_ADDRESS` environment variable to connect to a custom DBus daemon instead of the system one.
+
+**Quick workflow for new environments:**
+```bash
+./setup.sh              # Initial setup
+./start-dbus.sh          # Start local DBus daemon  
+./test-dbus.sh           # Verify everything works
+# Run your Node.js applications with dbus-next
+./stop-dbus.sh           # Stop daemon when done
+./clear-setup.sh         # Complete reset (removes all generated files)
+```
+
 ## Overview
 
 These tools provide an easy way to start, stop, and test a local DBus system daemon that runs independently from the system's main DBus service. This is useful for development and testing scenarios where you need isolated DBus communication.
@@ -79,6 +93,23 @@ Stops the local DBus system daemon and cleans up temporary files.
 ### `test-dbus.sh`
 Comprehensive testing and status checking of the local DBus daemon.
 
+### `clear-setup.sh`
+Completely resets the project to initial state by removing all generated files.
+
+**Usage:**
+```bash
+./clear-setup.sh
+```
+
+**What it does:**
+- Stops any running DBus daemon
+- Removes generated configuration files
+- Cleans temporary directories
+- Returns project to clean state for redistribution
+
+### `test-dbus.sh`
+Comprehensive testing and status checking of the local DBus daemon.
+
 **Usage:**
 ```bash
 ./test-dbus.sh
@@ -131,6 +162,11 @@ Comprehensive testing and status checking of the local DBus daemon.
 5. **When finished, stop the daemon:**
    ```bash
    ./stop-dbus.sh
+   ```
+
+6. **For complete cleanup (optional):**
+   ```bash
+   ./clear-setup.sh
    ```
 
 ### Try Node.js Examples
@@ -186,6 +222,7 @@ The interactive guide (`./guide.sh`) provides Arch-specific instructions and tro
 .
 ├── README.md                           # This file
 ├── setup.sh                          # Initial setup script
+├── clear-setup.sh                    # Reset script (removes generated files)
 ├── start-dbus.sh                      # Start DBus daemon
 ├── stop-dbus.sh                       # Stop DBus daemon  
 ├── test-dbus.sh                       # Test and status check
